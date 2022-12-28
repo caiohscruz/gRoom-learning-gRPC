@@ -16,6 +16,8 @@ Console.WriteLine($"Joining room {room}...");
 
 try
 {
+    // using deadline ~ "timeout"
+    //var joinResponse = client.RegisterToRoom(new RoomRegistrationRequest() { RoomName = room, UserName = username }, deadline: DateTime.UtcNow.AddSeconds(5));
     var joinResponse = client.RegisterToRoom(new RoomRegistrationRequest() { RoomName = room, UserName = username });
     if (joinResponse.Joined)
     {
@@ -25,6 +27,17 @@ try
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Error joining room {room}.");
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.WriteLine("Press any key to close the window.");
+        Console.Read();
+        return;
+    }
+}
+catch (Grpc.Core.RpcException ex)
+{
+    if(ex.StatusCode==Grpc.Core.StatusCode.DeadlineExceeded){
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Timeout exceeded when tring to join the {room} room. Please try again later.");
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.WriteLine("Press any key to close the window.");
         Console.Read();
