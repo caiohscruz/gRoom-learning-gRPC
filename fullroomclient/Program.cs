@@ -35,7 +35,8 @@ try
 }
 catch (Grpc.Core.RpcException ex)
 {
-    if(ex.StatusCode==Grpc.Core.StatusCode.DeadlineExceeded){
+    if (ex.StatusCode == Grpc.Core.StatusCode.DeadlineExceeded)
+    {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Timeout exceeded when tring to join the {room} room. Please try again later.");
         Console.ForegroundColor = ConsoleColor.Gray;
@@ -73,12 +74,24 @@ var task = Task.Run(async () =>
     while (true)
     {
         // TYPE HERE THE CODE FOR RECEIVING MESSAGES FROM THE SERVER
-        if(await call.ResponseStream.MoveNext(cts.Token)){
-            var msg = call.ResponseStream.Current;
-            var left = Console.CursorLeft - promptText.Length;
-            PrintMessage(msg);
+        try
+        {
+            if (await call.ResponseStream.MoveNext(cts.Token))
+            {
+                var msg = call.ResponseStream.Current;
+                var left = Console.CursorLeft - promptText.Length;
+                PrintMessage(msg);
+            }
+            await Task.Delay(500);
         }
-        await Task.Delay(500);
+        catch (Grpc.Core.RpcException ex)
+        {
+            if (ex.StatusCode == Grpc.Core.StatusCode.Cancelled)
+            {
+                Console.WriteLine("Cancelled!");
+                break;
+            }
+        }
     }
 });
 
@@ -88,13 +101,23 @@ while (true)
     var input = Console.ReadLine();
     RestoreInputCursor();
 
-    // TYPE HERE THE CODE FOR SENDING MESSAGES TO THE SERVER
-    var reqMsg = new ChatMessage();
-    reqMsg.Contents = input;
-    reqMsg.MsgTime = Timestamp.FromDateTime(DateTime.UtcNow);
-    reqMsg.Room=room;
-    reqMsg.User=username;
-    call.RequestStream.WriteAsync(reqMsg);
+    // implementing request cancelation
+    if (input == "X")
+    {
+        cts.Cancel();
+        Console.WriteLine("Chat cancelled.");
+    }
+    else
+    {
+        // TYPE HERE THE CODE FOR SENDING MESSAGES TO THE SERVER
+        var reqMsg = new ChatMessage();
+        reqMsg.Contents = input;
+        reqMsg.MsgTime = Timestamp.FromDateTime(DateTime.UtcNow);
+        reqMsg.Room = room;
+        reqMsg.User = username;
+        call.RequestStream.WriteAsync(reqMsg);
+    }
+
 }
 
 
@@ -107,7 +130,8 @@ void PrintMessage(ChatMessage msg)
     Console.SetCursorPosition(promptText.Length + left, 0);
 }
 
-void RestoreInputCursor()  {
+void RestoreInputCursor()
+{
     Console.SetCursorPosition(promptText.Length - 1, 0);
     Console.Write("                                    ");
     Console.SetCursorPosition(promptText.Length - 1, 0);
