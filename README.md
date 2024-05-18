@@ -1,6 +1,6 @@
 # gRoom-learning-gRPC
 
-"Postman for gRPC": [BloomRPC]](https://github.com/bloomrpc/bloomrpc/releases)
+"Postman for gRPC": [BloomRPC](https://github.com/bloomrpc/bloomrpc/releases)
 
 ![Project Architecture](./assets/architecture.png)
 
